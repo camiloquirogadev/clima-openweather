@@ -1,75 +1,60 @@
 # Clima · OpenWeatherMap + ASP.NET Core
 
-Minimal API en .NET 8 sobre OpenWeatherMap, con un frontend estático que muestra el
-clima actual, el pronóstico de los próximos días y un mapa para elegir el punto a mano.
+App de clima hecha con ASP.NET Core (.NET 8) y un frontend estático. Muestra el
+clima actual, el pronóstico de los próximos días y un mapa para elegir el punto.
 
-## Correr
+## Tecnologías
+
+- ASP.NET Core 8 (Minimal API)
+- HttpClient tipado + Polly (reintentos)
+- Caché en memoria
+- Leaflet + OpenStreetMap
+- xUnit
+
+## Requisitos
+
+- .NET 8 SDK
+- Una API key gratuita de [OpenWeatherMap](https://openweathermap.org/api)
+
+## Instalación
 
 ```bash
+git clone https://github.com/usuario/clima-openweather.git
+cd clima-openweather
 dotnet user-secrets set "OpenWeather:ApiKey" "TU_API_KEY"
 dotnet run
 ```
 
-Queda en `http://localhost:5108` (ver `Properties/launchSettings.json`).
+Abrir `http://localhost:5108`.
 
-La key se lee de `OpenWeather:ApiKey`, así que en producción sirve igual la variable
-de entorno `OpenWeather__ApiKey`. Si falta, la app no arranca. Recién sacada de
-openweathermap.org tarda un rato largo en activarse: hasta entonces devuelve 401 y
-la API contesta "la key no es válida o todavía no está activa", no "ciudad no encontrada".
+> La key recién creada puede tardar un par de horas en activarse.
 
 ## Endpoints
 
-Los dos aceptan `?ciudad=` o `?lat=&lon=`. Con coordenadas fuera de rango devuelven 400.
+Ambos aceptan `?ciudad=` o `?lat=&lon=`.
 
 ```
-GET /api/clima?ciudad=Rosario
-GET /api/pronostico?lat=-32.9468&lon=-60.6393
+GET /api/clima?ciudad=Bariloche
+GET /api/pronostico?lat=-41.13&lon=-71.31
 ```
+
+Respuesta:
 
 ```json
 {
-  "ciudad": "Rosario",
+  "ciudad": "San Carlos de Bariloche",
   "pais": "AR",
-  "descripcion": "Nubes dispersas",
-  "iconoCodigo": "03d",
-  "iconoUrl": "https://openweathermap.org/img/wn/03d@2x.png",
-  "temperaturaC": 16.2,
-  "sensacionC": 15.5,
-  "humedadPct": 63,
-  "vientoKmh": 16.7,
-  "lat": -32.9468,
-  "lon": -60.6393
+  "descripcion": "Nubes",
+  "iconoCodigo": "04d",
+  "iconoUrl": "https://openweathermap.org/img/wn/04d@2x.png",
+  "temperaturaC": 6.5,
+  "sensacionC": 4.2,
+  "humedadPct": 71,
+  "vientoKmh": 11.2,
+  "lat": -41.1335,
+  "lon": -71.3103
 }
 ```
-
-Códigos de error: `404` ubicación inexistente, `429` cuota agotada, `500` key inválida,
-`502`/`503` OpenWeather caído o devolviendo cualquier cosa.
-
-## Estructura
-
-```
-Program.cs                      Minimal API, HttpClient tipado, políticas de Polly
-Dtos/OpenWeatherResponse.cs     JSON crudo de /data/2.5/weather
-Dtos/ForecastResponse.cs        JSON crudo de /data/2.5/forecast
-Dtos/ClimaDto.cs                lo que devolvemos nosotros
-Dtos/PronosticoDiaDto.cs        un día ya agregado (mín/máx)
-Services/ClimaService.cs        consumo, agregación por día y caché
-wwwroot/index.html              buscador, tarjeta, mapa (Leaflet) e íconos
-tests/                          xunit sobre ClimaService con un handler fake
-```
-
-## Detalles que no se ven
-
-- **Caché en memoria** (10 min el clima, 30 el pronóstico). El plan free son 60 req/min
-  y cada click en el mapa dispara dos llamadas.
-- **Reintentos con Polly** ante 5xx/408/timeout, con backoff. El 429 no se reintenta:
-  con la cuota agotada sólo la quema más rápido.
-- **El pronóstico se agrupa con el huso de la ciudad** (`city.timezone`), no con la fecha
-  del server. Si no, consultar Tokio desde Argentina corre todos los días un casillero.
-- **El último día se descarta si viene cortado**: la API manda 40 slots de 3 h desde
-  *ahora*, así que el quinto día suele tener dos mediciones y un mín/máx que no significa nada.
-  Por eso a veces son 4 tarjetas y no 5.
-- **La API key nunca se loguea.** Va en el query string, así que a los logs sólo va la ruta.
 
 ## Tests
 
@@ -77,10 +62,18 @@ tests/                          xunit sobre ClimaService con un handler fake
 dotnet test tests/ClimaOpenWeather.Tests
 ```
 
-Cubren el mapeo a los DTOs, el 404 contra el 401, el caché, el agrupado por huso horario
-y que la key no aparezca en los logs.
+## Estructura
 
-## Íconos
+```
+Program.cs        Minimal API y configuración
+Dtos/             DTOs de OpenWeather y los propios
+Services/         Consumo de la API y mapeo
+wwwroot/          Frontend (HTML, CSS, íconos)
+tests/            Tests de ClimaService
+```
 
-Meteocons de Bas Milius (MIT) — ver `wwwroot/icons/weather/CREDITS.md`. Si el código de
-OpenWeather no está mapeado, cae al PNG que devuelve la propia API.
+## Créditos
+
+Íconos [Meteocons](https://github.com/basmilius/weather-icons) de Bas Milius (MIT).
+Datos de [OpenWeatherMap](https://openweathermap.org).
+Mapas de [OpenStreetMap](https://www.openstreetmap.org/copyright).
