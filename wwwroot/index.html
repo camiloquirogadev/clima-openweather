@@ -184,6 +184,7 @@
     }
 
     let enCurso = null;
+    const API_BASE_URL = "https://clima-openweather.onrender.com";
 
     async function cargar(qs) {
       // Cancela la búsqueda anterior: sin esto gana la respuesta que llega
@@ -198,8 +199,8 @@
 
       try {
         const [climaRes, pronRes] = await Promise.all([
-          fetch(`/api/clima?${qs}`, { signal: ctrl.signal }),
-          fetch(`/api/pronostico?${qs}`, { signal: ctrl.signal })
+          fetch(`${API_BASE_URL}/api/clima?${qs}`, { signal: ctrl.signal }),
+          fetch(`${API_BASE_URL}/api/pronostico?${qs}`, { signal: ctrl.signal })
         ]);
 
         // fetch no tira ante un 4xx/5xx, sólo ante fallo de red: el status hay

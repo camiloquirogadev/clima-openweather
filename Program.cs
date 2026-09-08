@@ -16,6 +16,16 @@ if (string.IsNullOrWhiteSpace(builder.Configuration["OpenWeather:ApiKey"]))
 }
 
 builder.Services.AddMemoryCache();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("Frontend", policy =>
+        policy.WithOrigins(
+                "https://demo-clima-openweather.netlify.app",
+                "http://localhost:5108",
+                "https://localhost:7201")
+            .AllowAnyHeader()
+            .AllowAnyMethod());
+});
 
 builder.Services.AddHttpClient<IClimaService, ClimaService>(client =>
 {
@@ -31,6 +41,7 @@ builder.Services.AddHttpClient<IClimaService, ClimaService>(client =>
 
 var app = builder.Build();
 
+app.UseCors("Frontend");
 app.UseDefaultFiles();
 app.UseStaticFiles();
 
