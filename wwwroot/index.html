@@ -4,101 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Clima · OpenWeatherMap + ASP.NET Core</title>
+
+  <!-- estilos.css pisa clases de Leaflet, así que va después. -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <style>
-    :root {
-      --bg: #faf7f2; --card: #ffffff; --accent: #ea580c; --text: #292524; --muted: #78716c;
-      --border: #ddcdb8; --inset: #f3ece1; --on-accent: #ffffff; --error: #dc2626;
-      --shadow: 0 4px 16px -4px rgba(120, 72, 28, .18), 0 1px 3px rgba(120, 72, 28, .12);
-      --ring: 0 0 0 3px rgba(234, 88, 12, .25);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-      background: radial-gradient(circle at top, #fffdf9, var(--bg));
-      background-attachment: fixed;
-      color: var(--text); min-height: 100vh; padding: 1.5rem 1rem;
-      -webkit-font-smoothing: antialiased;
-    }
-    .app { width: 100%; max-width: 900px; margin: 0 auto; }
-    h1 {
-      font-size: 1.35rem; text-align: center; margin-bottom: 1.25rem; font-weight: 600;
-      letter-spacing: -.01em;
-    }
-    h1 span { color: var(--accent); }
-    .sr-only {
-      position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden;
-      clip: rect(0 0 0 0); white-space: nowrap; border: 0;
-    }
-    .search { display: flex; gap: .5rem; max-width: 480px; margin: 0 auto 1rem; }
-    input {
-      flex: 1; padding: .75rem 1rem; border-radius: .75rem; border: 1px solid var(--border);
-      background: var(--card); color: var(--text); font-size: 1rem; outline: none;
-      transition: border-color .18s ease, box-shadow .18s ease;
-    }
-    input::placeholder { color: var(--muted); }
-    input:focus { border-color: var(--accent); box-shadow: var(--ring); }
-    button {
-      padding: .75rem 1.25rem; border: none; border-radius: .75rem; cursor: pointer;
-      background: var(--accent); color: var(--on-accent); font-weight: 600; font-size: 1rem;
-      transition: filter .18s ease, transform .08s ease;
-    }
-    button:hover:not(:disabled) { filter: brightness(1.08); }
-    button:active:not(:disabled) { transform: translateY(1px); }
-    button:disabled { opacity: .6; cursor: default; }
-    button:focus-visible { outline: none; box-shadow: var(--ring); }
-
-    /* Mismo nodo para carga y error: .msg neutro, .msg.error rojo. */
-    .msg { text-align: center; color: var(--muted); min-height: 1.2rem; margin-bottom: .75rem; font-size: .9rem; }
-    .msg.error { color: var(--error); }
-
-    .layout { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
-    @media (max-width: 700px) { .layout { grid-template-columns: 1fr; } }
-    #map { height: 320px; border-radius: 1rem; border: 1px solid var(--border); z-index: 0; box-shadow: var(--shadow); }
-    .hint { font-size: .75rem; color: var(--muted); text-align: center; margin-top: .5rem; }
-    .sinmapa {
-      height: 320px; display: grid; place-items: center; padding: 1rem; text-align: center;
-      border: 1px dashed var(--border); border-radius: 1rem; color: var(--muted); font-size: .9rem;
-    }
-
-    .card {
-      background: var(--card); border-radius: 1rem; padding: 1.25rem; text-align: center;
-      border: 1px solid var(--border); box-shadow: var(--shadow); display: none;
-    }
-    .card.visible { display: block; animation: rise .35s ease both; }
-    .city { font-size: 1.3rem; font-weight: 600; letter-spacing: -.01em; }
-    .desc { color: var(--muted); margin-top: .1rem; }
-    .temp {
-      font-size: 2.85rem; font-weight: 700; margin: .1rem 0; line-height: 1.1;
-      font-variant-numeric: tabular-nums;
-    }
-    .icon { width: 110px; height: 110px; margin: -1rem auto -.75rem; filter: drop-shadow(0 6px 12px rgba(0,0,0,.4)); }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; margin-top: .75rem; }
-    .stat { background: var(--inset); border: 1px solid var(--border); border-radius: .75rem; padding: .55rem; }
-    .stat .label { font-size: .68rem; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
-    .stat .value { font-size: 1.05rem; font-weight: 600; margin-top: .15rem; font-variant-numeric: tabular-nums; }
-
-    .forecast { margin-top: 1rem; display: none; }
-    .forecast.visible { display: block; animation: rise .35s ease .05s both; }
-    .forecast h2 { font-size: .95rem; color: var(--muted); font-weight: 600; margin-bottom: .5rem; }
-    .days { display: grid; grid-template-columns: repeat(5, 1fr); gap: .5rem; }
-    @media (max-width: 520px) { .days { grid-template-columns: repeat(2, 1fr); } }
-    .day {
-      background: var(--inset); border: 1px solid var(--border); border-radius: .75rem;
-      padding: .6rem .4rem; text-align: center; box-shadow: var(--shadow);
-      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
-    }
-    .day:hover { transform: translateY(-3px); border-color: var(--accent); box-shadow: var(--shadow); }
-    .day .dow { font-size: .8rem; color: var(--muted); text-transform: capitalize; }
-    .day img { width: 50px; height: 50px; margin: -.35rem auto; }
-    .day .max { font-weight: 700; font-variant-numeric: tabular-nums; }
-    .day .min { color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
-
-    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-    @media (prefers-reduced-motion: reduce) {
-      *, .card.visible, .forecast.visible { animation: none !important; transition: none !important; }
-    }
-  </style>
+  <link rel="stylesheet" href="/css/estilos.css" />
 </head>
 <body>
   <div class="app">
@@ -106,24 +15,29 @@
 
     <div class="search">
       <label class="sr-only" for="ciudad">Ciudad</label>
-      <input id="ciudad" type="text" placeholder="Ej: Rosario, Buenos Aires, Madrid..." />
+      <input id="ciudad" type="text" placeholder="Bariloche, Buenos Aires, Madrid..." />
       <button id="buscar">Buscar</button>
     </div>
+
+    <!-- Un solo nodo para "Buscando..." y para los errores. -->
     <div class="msg" id="msg" role="status" aria-live="polite"></div>
 
     <div class="layout">
       <div>
+        <!-- El JS reemplaza #mapaBox entero si Leaflet no cargó. -->
         <div id="mapaBox">
           <div id="map"></div>
         </div>
         <div class="hint" id="mapaHint">Hacé clic en el mapa para ver el clima de ese punto</div>
       </div>
 
+      <!-- El JS escribe por id, así que el orden es sólo jerarquía visual. -->
       <div class="card" id="card">
         <img class="icon" id="icono" alt="" />
+        <div class="temp" id="temp"></div>
         <div class="city" id="ciudadNombre"></div>
         <div class="desc" id="descripcion"></div>
-        <div class="temp" id="temp"></div>
+
         <div class="grid">
           <div class="stat"><div class="label">Sensación</div><div class="value" id="sensacion"></div></div>
           <div class="stat"><div class="label">Humedad</div><div class="value" id="humedad"></div></div>
@@ -136,6 +50,15 @@
       <h2 id="forecastTitulo">Pronóstico</h2>
       <div class="days" id="days"></div>
     </div>
+
+    <footer class="pie">
+      <a href="https://github.com/camiloquirogadev" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+        </svg>
+        GitHub
+      </a>
+    </footer>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -143,7 +66,7 @@
     const $ = (id) => document.getElementById(id);
     const card = $("card"), forecast = $("forecast"), msg = $("msg"), boton = $("buscar");
 
-    // Íconos Meteocons (MIT, Bas Milius) por código de OpenWeather.
+    // Código de OpenWeather ("04d") -> SVG local de Meteocons.
     const METEO = {
       "01d": "clear-day",              "01n": "clear-night",
       "02d": "partly-cloudy-day",      "02n": "partly-cloudy-night",
@@ -156,6 +79,9 @@
       "50d": "mist",                   "50n": "mist"
     };
 
+    // Si el código no está mapeado usa el PNG de OpenWeather; si el SVG existe
+    // pero falla al cargar, el listener lo reemplaza. once evita el ciclo si el
+    // fallback también falla.
     function ponerIcono(img, codigo, urlFallback) {
       const local = METEO[codigo];
       img.src = local ? `/icons/weather/${local}.svg` : (urlFallback || "");
@@ -166,27 +92,33 @@
 
     let map = null, marker = null;
 
-    // Leaflet viene de CDN y el resto del script vive en el mismo <script>:
-    // sin este guard, "L is not defined" corta la ejecución y también muere el buscador.
+    // Leaflet viene de CDN y el resto del script vive en el mismo <script>: sin
+    // este guard, "L is not defined" corta acá y se cae también el buscador.
     if (typeof L === "undefined") {
       $("mapaBox").innerHTML =
         '<div class="sinmapa">No se pudo cargar el mapa. El buscador funciona igual.</div>';
       $("mapaHint").remove();
     } else {
-      map = L.map("map").setView([-32.95, -60.65], 6);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap", maxZoom: 18
+      map = L.map("map").setView([-41.13, -71.31], 6);   // Bariloche
+
+      L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19, attribution: "© OpenStreetMap"
       }).addTo(map);
+
       map.on("click", (e) => cargarPorCoords(e.latlng.lat, e.latlng.lng));
     }
 
     function ponerMarker(lat, lon, ciudad, resumen) {
       if (!map) return;
       if (marker) marker.remove();
+
+      // Nodos y textContent en vez de un string de HTML: el nombre viene de una
+      // API externa.
       const popup = document.createElement("div");
       const nombre = document.createElement("b");
       nombre.textContent = ciudad;
       popup.append(nombre, document.createElement("br"), document.createTextNode(resumen));
+
       marker = L.marker([lat, lon]).addTo(map).bindPopup(popup).openPopup();
       map.setView([lat, lon], 9);
     }
@@ -196,12 +128,13 @@
       $("icono").alt = data.descripcion;
       $("ciudadNombre").textContent = `${data.ciudad}, ${data.pais}`;
       $("descripcion").textContent = data.descripcion;
-      $("temp").textContent = `${data.temperaturaC}°C`;
-      $("sensacion").textContent = `${data.sensacionC}°C`;
+      $("temp").textContent = `${data.temperaturaC}°`;
+      $("sensacion").textContent = `${data.sensacionC}°`;
       $("humedad").textContent = `${data.humedadPct}%`;
       $("viento").textContent = `${data.vientoKmh} km/h`;
+
       card.classList.add("visible");
-      ponerMarker(data.lat, data.lon, data.ciudad, `${data.temperaturaC}°C · ${data.descripcion}`);
+      ponerMarker(data.lat, data.lon, data.ciudad, `${data.temperaturaC}° · ${data.descripcion}`);
     }
 
     function tarjetaDia(d) {
@@ -210,7 +143,8 @@
 
       const dow = document.createElement("div");
       dow.className = "dow";
-      dow.textContent = d.diaSemana;
+      dow.textContent = d.diaSemana.slice(0, 3);   // "MIÉ" entra, "MIÉRCOLES" no
+      dow.title = d.diaSemana;
 
       const img = document.createElement("img");
       ponerIcono(img, d.iconoCodigo, d.iconoUrl);
@@ -230,12 +164,11 @@
     }
 
     function renderPronostico(dias) {
-      // Pueden venir 4 días: el backend descarta el último si llega parcial.
+      // Pueden venir 4: el backend descarta el último si llega parcial.
       $("forecastTitulo").textContent =
         dias.length === 1 ? "Mañana" : `Próximos ${dias.length} días`;
 
-      const cont = $("days");
-      cont.replaceChildren(...dias.map(tarjetaDia));
+      $("days").replaceChildren(...dias.map(tarjetaDia));
       forecast.classList.add("visible");
     }
 
@@ -244,6 +177,7 @@
       msg.classList.toggle("error", esError);
     }
 
+    // Si no, ante un error queda visible la tarjeta de la consulta anterior.
     function ocultarResultados() {
       card.classList.remove("visible");
       forecast.classList.remove("visible");
@@ -252,8 +186,8 @@
     let enCurso = null;
 
     async function cargar(qs) {
-      // Aborta la request anterior: sin esto pinta la respuesta que llega última,
-      // que no es necesariamente la última pedida.
+      // Cancela la búsqueda anterior: sin esto gana la respuesta que llega
+      // última, que no es necesariamente la última pedida.
       enCurso?.abort();
       const ctrl = new AbortController();
       enCurso = ctrl;
@@ -268,6 +202,8 @@
           fetch(`/api/pronostico?${qs}`, { signal: ctrl.signal })
         ]);
 
+        // fetch no tira ante un 4xx/5xx, sólo ante fallo de red: el status hay
+        // que mirarlo a mano. Los errores traen { mensaje }.
         const clima = await climaRes.json();
         if (!climaRes.ok) {
           estado(clima.mensaje || "No se pudo obtener el clima.", true);
@@ -276,11 +212,17 @@
 
         estado("");
         renderClima(clima);
+
+        // El pronóstico es opcional: si falla igual mostramos el clima actual.
         if (pronRes.ok) renderPronostico(await pronRes.json());
       } catch (e) {
+        // No es un error: la reemplazó una búsqueda más nueva, que ya se está
+        // ocupando de la UI.
         if (e.name === "AbortError") return;
         estado("No se pudo conectar con el servidor.", true);
       } finally {
+        // Sólo la búsqueda vigente devuelve el botón. Si a esta la abortó otra,
+        // enCurso ya apunta al controller nuevo y le toca a él soltarlo.
         if (enCurso === ctrl) {
           enCurso = null;
           boton.disabled = false;
@@ -301,8 +243,8 @@
       if (e.key === "Enter") buscarLoEscrito();
     });
 
-    $("ciudad").value = "Rosario";
-    cargarPorCiudad("Rosario");
+    $("ciudad").value = "Bariloche";
+    cargarPorCiudad("Bariloche");
   </script>
 </body>
 </html>
