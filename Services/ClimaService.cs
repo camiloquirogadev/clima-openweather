@@ -29,8 +29,8 @@ public class ClimaService : IClimaService
         _http = http;
         _cache = cache;
         _logger = logger;
-        _apiKey = config["OpenWeather:ApiKey"]
-                  ?? throw new InvalidOperationException("Falta OpenWeather:ApiKey.");
+        // Program.cs corta el arranque si falta, así que acá ya está garantizada.
+        _apiKey = config["OpenWeather:ApiKey"]!;
     }
 
     public async Task<ClimaDto?> ObtenerActualAsync(
