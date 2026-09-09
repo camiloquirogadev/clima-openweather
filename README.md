@@ -77,3 +77,10 @@ tests/            Tests de ClimaService
 Íconos [Meteocons](https://github.com/basmilius/weather-icons) de Bas Milius (MIT).
 Datos de [OpenWeatherMap](https://openweathermap.org).
 Mapas de [OpenStreetMap](https://www.openstreetmap.org/copyright).
+
+## Proceso de desarrollo
+
+El proyecto fue desarrollado con asistencia de herramientas de inteligencia
+artificial para explorar alternativas, redactar código y revisar la
+implementación. Las decisiones técnicas, la integración, las pruebas y la
+validación final fueron responsabilidad del autor.
